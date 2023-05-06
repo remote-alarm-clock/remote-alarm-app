@@ -3,8 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'firebase_options.dart';
 import 'checkbox_form_field.dart';
+import 'username_setup_dialog.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 //import 'package:background_fetch/background_fetch.dart';
 
@@ -123,7 +125,8 @@ Future<void> showMessageFromClock(DatabaseEvent event) async {
   final msgString = msg.value.toString();
   String timeString = ""; // Will be empty if no date is found.
   if (utc.exists) {
-    final timestamp = DateTime.fromMillisecondsSinceEpoch((utc.value as int)*1000);
+    final timestamp =
+        DateTime.fromMillisecondsSinceEpoch((utc.value as int) * 1000);
     print(timestamp);
     final DateFormat formatterDate = DateFormat("dd.MM.yyyy");
     final DateFormat formatterTime = DateFormat("HH:mm");
@@ -134,102 +137,6 @@ Future<void> showMessageFromClock(DatabaseEvent event) async {
 
   _showNotification("Nachricht von $userString", "$timeString\n$msgString");
 }
-
-/**
- * HANDLE USERNAME INPUT
- */
-class UsernameInputField extends StatefulWidget {
-  const UsernameInputField({super.key});
-
-  @override
-  State<UsernameInputField> createState() => _UsernameInputFieldState();
-}
-
-class _UsernameInputFieldState extends State<UsernameInputField> {
-  final _formKey = GlobalKey<FormState>();
-  String _username = "";
-  int usernameLimit = 8;
-
-  void readData() async {
-    // Load the username async.
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("username") == null) {
-      setState(() => _username = "");
-      print("prefs are empty");
-    } else {
-      setState(() {
-        _username = prefs.getString("username")!;
-        print("prefs name loaded to $_username");
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    readData();
-    print("initializing namefield");
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-        key: _formKey,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Expanded(
-                child: Padding(
-                    padding: EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 0.0),
-                    child: TextFormField(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Benutzername',
-                      ),
-                      initialValue: _username,
-                      // Requiered to update TextFormField on stateChange
-                      key: Key(_username),
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      onSaved: (String? value) {
-                        print("New username is: '$value'");
-                        _username = value!;
-                      },
-                      validator: (String? value) {
-                        if (value == null || value.isEmpty) {
-                          return "Bitte wähle einen Benutzernamen!";
-                        }
-                        if (value.length > usernameLimit) {
-                          return "Benutzername max. $usernameLimit Zeichen!";
-                        }
-                        return null;
-                      },
-                    ))),
-            Padding(
-                padding: EdgeInsets.fromLTRB(0, 0, 8, 0),
-                child: ElevatedButton(
-                  onPressed: () async {
-                    // Validate the Form
-                    if (_formKey.currentState!.validate()) {
-                      // Form is valid so display a snackbar, that the message will be sent out!
-                      _formKey.currentState!.save();
-                      // Save new username to prefs
-                      final prefs = await SharedPreferences.getInstance();
-                      prefs.setString("username", _username);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content:
-                              Text("Benutzername auf '$_username' gesetzt!")));
-                    }
-                    // Validate and save username
-                  },
-                  child: const Text('Namen setzen'),
-                ))
-          ],
-        ));
-  }
-}
-/**
- * END HANDLE USERNAME INPUT
- */
 
 /**
  * MESSAGE INPUT
@@ -243,10 +150,13 @@ class MessageForm extends StatefulWidget {
 
 class _MessageFormState extends State<MessageForm> {
   final _formKey = GlobalKey<FormState>();
-  final letterLimitForMessage = 32;
+  final letterLimitForMessage = 126;
+  final clockImage = 'assets/clockface_zoom.svg';
 
   bool useAlarm = false;
-  String messageToClock = "";
+  String messageToClock = ""; // What will be sent to server (unclean)
+  String previewMessage =
+      " "; // What is displayed (also preprocessed with newlines)
 
   //final String senderName = "App";
 
@@ -277,7 +187,8 @@ class _MessageFormState extends State<MessageForm> {
         "$newMessageId/sender_name": username,
         "$newMessageId/text": messageToClock,
         "$newMessageId/bell": (useAlarm ? 1 : 0),
-        "$newMessageId/timestamp": (DateTime.now().millisecondsSinceEpoch/1000.0).round(),
+        "$newMessageId/timestamp":
+            (DateTime.now().millisecondsSinceEpoch / 1000.0).round(),
         "latest_message_id": newMessageId
       });
       ScaffoldMessenger.of(context)
@@ -307,6 +218,12 @@ class _MessageFormState extends State<MessageForm> {
     starCountRef.onValue.listen((DatabaseEvent event) async {
       showMessageFromClock(event);
     });
+
+    double width =
+        MediaQuery.of(context).size.width * 0.4; //40% of screen width
+
+    double fullScreenWidth =
+        MediaQuery.of(context).size.width; //100% of screen width
     // This method is rerun every time setState is called,
     // for instance, as done by the _increment method above.
     // The Flutter framework has been optimized to make
@@ -318,15 +235,49 @@ class _MessageFormState extends State<MessageForm> {
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              const UsernameInputField(),
+              Container(
+                  width: fullScreenWidth,
+                  child: Stack(
+                    children: [
+                      SvgPicture.asset(clockImage,
+                          width: fullScreenWidth,
+                          semanticsLabel:
+                              'clockface'), // Background picture of clockface
+                      // Image: 53*32 top left 13,8 (top, left)
+                      Positioned(
+                        top: 50,
+                        left: 100,
+                        child: Container(
+                          alignment: Alignment.topLeft,
+                          width: width,
+                          height: 0.65 * width, // Match 128*64 aspec ratio
+                          child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(previewMessage,
+                                  textAlign: TextAlign.left,
+                                  style: const TextStyle(
+                                      fontSize: 90,
+                                      fontFamily: 'RobotoMono',
+                                      color: Colors.white))), // Display
+                        ),
+                      )
+                    ],
+                  )),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
                 child: TextFormField(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    labelText: 'Nachricht an Wecker',
+                    labelText: 'Nachricht an den Wecker',
                   ),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
+                  onChanged: (text) {
+                    print("Debug text event $text!");
+                    previewMessage = text.padRight(21).replaceAllMapped(
+                        RegExp(r'.{21}'), (match) => "${match.group(0)}\n");
+                    print("Now message: $previewMessage");
+                    setState(() => {});
+                  },
                   onSaved: (String? value) {
                     print("Message to Clock is: '$value'");
                     messageToClock = value!;
@@ -423,7 +374,7 @@ class App extends StatelessWidget {
         // Check for errors
         if (snapshot.hasError) {
           print("Something went wrong");
-          return SomethingWentWrong();
+          return const SomethingWentWrong();
         }
 
         // Once complete, show your application
@@ -431,10 +382,27 @@ class App extends StatelessWidget {
           return MaterialApp(
               title: appTitle,
               home: Scaffold(
-                  appBar: AppBar(
-                    title: const Text(appTitle),
-                  ),
-                  body: MessageForm()));
+                  appBar: AppBar(title: const Text(appTitle), actions: <Widget>[
+                    PopupMenuButton(
+                        icon: const Icon(Icons.more_vert),
+                        itemBuilder: (context) {
+                          return [
+                            PopupMenuItem<int>(
+                              child: const Text("Namen setzen"),
+                              onTap: () => {
+                                Future.delayed(
+                                  const Duration(seconds: 0),
+                                  () => usernameDialogBuilder(context),
+                                )
+                              },
+                            ),
+                            const PopupMenuItem<int>(
+                              child: Text("Einstellungen"),
+                            ),
+                          ];
+                        }),
+                  ]),
+                  body: const MessageForm()));
         }
 
         // Otherwise, show something whilst waiting for initialization to complete

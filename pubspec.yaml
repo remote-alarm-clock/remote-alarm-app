@@ -38,7 +38,8 @@ dependencies:
   flutter_local_notifications: ^12.0.3
   shared_preferences: ^2.0.15
   intl: ^0.17.0
-
+  flutter_svg: ^2.0.5
+  
 #dependency_overrides:
 #  firebase_core_platform_interface: 4.5.1
 
@@ -67,6 +68,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/
   fonts:
     - family: RobotoMono
       fonts:
