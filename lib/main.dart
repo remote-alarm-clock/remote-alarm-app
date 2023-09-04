@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'firebase_options.dart';
 import 'checkbox_form_field.dart';
-import 'username_setup_dialog.dart';
+import 'settings_page.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 //import 'package:background_fetch/background_fetch.dart';
 
-// TODO: Make this settable through settings
 const appTitle = "Wecker";
-String clock_id = "clock_1";
 
 /**
  * TODO
@@ -25,8 +27,8 @@ String clock_id = "clock_1";
 /**
  * BACKGROUND TASK
  */
-/*
-// [Android-only] This "Headless Task" is run when the Android app
+
+/*// [Android-only] This "Headless Task" is run when the Android app
 // is terminated with enableHeadless: true
 void backgroundFetchHeadlessTask(HeadlessTask task) async {
   String taskId = task.taskId;
@@ -41,8 +43,7 @@ void backgroundFetchHeadlessTask(HeadlessTask task) async {
   print('[BackgroundFetch] Headless event received.');
   // Do your work here...
   BackgroundFetch.finish(taskId);
-}
-*/
+}*/
 
 /**
  * END BACKGROUND TASK
@@ -84,7 +85,6 @@ Future<void> _showNotification(String title, String content) async {
           'arlm_clk_back_channel', 'Alarm Clock back channel',
           channelDescription: 'Important stuff sent here.',
           importance: Importance.max,
-          priority: Priority.high,
           ticker: 'ticker');
   const NotificationDetails platformChannelSpecifics =
       NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -103,6 +103,12 @@ Future<void> showMessageFromClock(DatabaseEvent event) async {
   final prefs = await SharedPreferences.getInstance();
   final data = event.snapshot.value;
   final latestClockStatusCount = prefs.get('latest_clock_status_count') ?? -1;
+
+  final clock_id = prefs.getString('clock_id');
+  if (clock_id == null) {
+    print("Clock_ID is null!");
+    return;
+  }
 
   // There already exists a message with that content, which has been displayed.
   if (latestClockStatusCount != -1 &&
@@ -138,6 +144,26 @@ Future<void> showMessageFromClock(DatabaseEvent event) async {
   _showNotification("Nachricht von $userString", "$timeString\n$msgString");
 }
 
+class MainPage extends StatelessWidget {
+  const MainPage({Key? key, required this.title}) : super(key: key);
+  final String title;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(title: const Text(appTitle), actions: <Widget>[
+          IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Öffne Einstellungen',
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return SettingsPage();
+                }));
+              }),
+        ]),
+        body: const MessageForm());
+  }
+}
+
 /**
  * MESSAGE INPUT
  */
@@ -170,8 +196,15 @@ class _MessageFormState extends State<MessageForm> {
               "Es wurde kein Benutzername gesetzt. Bitte wähle als erstes einen Namen.")));
       return;
     }
+    if (prefs.getString("clock_id") == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text("Es wurde keine Clock_ID gesetzt. Bitte wähle eine aus.")));
+      return;
+    }
 
     final username = prefs.getString("username")!;
+    final clock_id = prefs.getString("clock_id")!;
 
     final referenceLastMessageId = FirebaseDatabase.instance
         .ref("clocks/$clock_id/messages/latest_message_id");
@@ -206,18 +239,36 @@ class _MessageFormState extends State<MessageForm> {
   @override
   void initState() {
     super.initState();
+    registerListener();
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void registerListener() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString("clock_id") == null) {
+      return;
+    }
+
+    final clockId = prefs.getString("clock_id")!;
     /**
      * REGISTER NOTIFICATION HANDLER FOR DATABASE CHANGE MESSAGE
      */
     DatabaseReference starCountRef = FirebaseDatabase.instance
-        .ref('clocks/$clock_id/clock_fb/latest_clock_status_count');
+        .ref('clocks/$clockId/clock_fb/latest_clock_status_count');
     starCountRef.onValue.listen((DatabaseEvent event) async {
       showMessageFromClock(event);
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isLoggedIn()) {
+      SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+          return const SettingsPage();
+        }));
+      });
+    }
+    registerListener();
 
     double width =
         MediaQuery.of(context).size.width * 0.4; //40% of screen width
@@ -243,14 +294,16 @@ class _MessageFormState extends State<MessageForm> {
                           width: fullScreenWidth,
                           semanticsLabel:
                               'clockface'), // Background picture of clockface
-                      // Image: 53*32 top left 13,8 (top, left)
+                      // Image aspect ratio: 0.5053, left relative to image: 0.2565, top relative to height: 0.2737
                       Positioned(
-                        top: 50,
-                        left: 100,
+                        top: fullScreenWidth *
+                            0.5053 *
+                            0.2737, // height * top spacing
+                        left: fullScreenWidth * 0.2565, // width * left spacing
                         child: Container(
                           alignment: Alignment.topLeft,
                           width: width,
-                          height: 0.65 * width, // Match 128*64 aspec ratio
+                          height: 0.65 * width, // Match 128*64 aspect ratio
                           child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(previewMessage,
@@ -271,10 +324,17 @@ class _MessageFormState extends State<MessageForm> {
                     labelText: 'Nachricht an den Wecker',
                   ),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  onChanged: (text) {
+                  onChanged: (text) async {
                     print("Debug text event $text!");
-                    previewMessage = text.padRight(21).replaceAllMapped(
-                        RegExp(r'.{21}'), (match) => "${match.group(0)}\n");
+                    final prefs = await SharedPreferences.getInstance();
+                    if (prefs.getString("username") == null) {
+                      return;
+                    }
+                    final username = prefs.getString("username")!;
+                    previewMessage = "$username> $text"
+                        .padRight(21)
+                        .replaceAllMapped(
+                            RegExp(r'.{21}'), (match) => "${match.group(0)}\n");
                     print("Now message: $previewMessage");
                     setState(() => {});
                   },
@@ -379,30 +439,10 @@ class App extends StatelessWidget {
 
         // Once complete, show your application
         if (snapshot.connectionState == ConnectionState.done) {
-          return MaterialApp(
-              title: appTitle,
-              home: Scaffold(
-                  appBar: AppBar(title: const Text(appTitle), actions: <Widget>[
-                    PopupMenuButton(
-                        icon: const Icon(Icons.more_vert),
-                        itemBuilder: (context) {
-                          return [
-                            PopupMenuItem<int>(
-                              child: const Text("Namen setzen"),
-                              onTap: () => {
-                                Future.delayed(
-                                  const Duration(seconds: 0),
-                                  () => usernameDialogBuilder(context),
-                                )
-                              },
-                            ),
-                            const PopupMenuItem<int>(
-                              child: Text("Einstellungen"),
-                            ),
-                          ];
-                        }),
-                  ]),
-                  body: const MessageForm()));
+          final auth = FirebaseAuth.instanceFor(
+              app: Firebase.app(), persistence: Persistence.LOCAL);
+          return const MaterialApp(
+              title: appTitle, home: MainPage(title: appTitle));
         }
 
         // Otherwise, show something whilst waiting for initialization to complete
@@ -417,6 +457,10 @@ class App extends StatelessWidget {
  */
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
 
   await initializeNotifications();
   runApp(const App());
