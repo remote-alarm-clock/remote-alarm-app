@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'firebase_options.dart';
 import 'checkbox_form_field.dart';
 import 'settings_page.dart';
+import 'backend.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -118,6 +119,7 @@ Future<void> showMessageFromClock(DatabaseEvent event) async {
   prefs.setInt('latest_clock_status_count', int.parse(data.toString()));
 
   // Load Message Body
+  // TODO: Move DB functions to backend.
   final msg = await FirebaseDatabase.instance
       .ref("clocks/$clock_id/clock_fb/latest_clock_status")
       .get();
@@ -187,53 +189,8 @@ class _MessageFormState extends State<MessageForm> {
   //final String senderName = "App";
 
   /// Send a new message to firebase
-  void sendMessage() async {
-    // Check if username has been set
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("username") == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              "Es wurde kein Benutzername gesetzt. Bitte wähle als erstes einen Namen.")));
-      return;
-    }
-    if (prefs.getString("clock_id") == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text("Es wurde keine Clock_ID gesetzt. Bitte wähle eine aus.")));
-      return;
-    }
-
-    final username = prefs.getString("username")!;
-    final clock_id = prefs.getString("clock_id")!;
-
-    final referenceLastMessageId = FirebaseDatabase.instance
-        .ref("clocks/$clock_id/messages/latest_message_id");
-    // Get newest Message ID
-    final latestMessageId = await referenceLastMessageId.get();
-
-    // Push new Message to Stack
-    if (latestMessageId.exists) {
-      // Check if return was not null
-      int newMessageId = (int.parse(latestMessageId.value.toString())) + 1;
-      final refUp = FirebaseDatabase.instance.ref("clocks/$clock_id/messages");
-      await refUp.update({
-        "$newMessageId/sender_name": username,
-        "$newMessageId/text": messageToClock,
-        "$newMessageId/bell": (useAlarm ? 1 : 0),
-        "$newMessageId/timestamp":
-            (DateTime.now().millisecondsSinceEpoch / 1000.0).round(),
-        "latest_message_id": newMessageId
-      });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Nachricht ist raus!")));
-    } else {
-      // ID does not exist
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              "Es ist ein Fehler beim Versenden aufgetreten. Die letzte Nachricht-ID existiert nicht!")));
-    }
-
-    //_showNotification("test", "test2");
+  void _sendMessage() async {
+    dbSendMessage(context, messageToClock, useAlarm);
   }
 
   @override
@@ -243,6 +200,7 @@ class _MessageFormState extends State<MessageForm> {
   }
 
   void registerListener() async {
+    // TODO: Move DB functions to backend
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString("clock_id") == null) {
       return;
@@ -376,7 +334,7 @@ class _MessageFormState extends State<MessageForm> {
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text("Nachricht wird versendet...")));
-                        sendMessage();
+                        _sendMessage();
                       }
                     },
                     child: const Text('Absenden'),
@@ -393,6 +351,15 @@ class _MessageFormState extends State<MessageForm> {
 /**
  * LOADING SCREEN AND APP
  */
+
+/// Method where all initializations happen and all pre build checks are supposed to be done! (Like async DB checks and builders!)
+Future<void> initializeApp() async {
+  // Initialize everything
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Do database checks here
+}
+
 class SomethingWentWrong extends StatelessWidget {
   const SomethingWentWrong({Key? key}) : super(key: key);
 
@@ -428,8 +395,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder(
       // Initialize FlutterFire
-      future: Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform),
+      future: initializeApp(),
       builder: (context, snapshot) {
         // Check for errors
         if (snapshot.hasError) {
