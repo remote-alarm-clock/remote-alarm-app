@@ -1,12 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/memory.dart';
+import 'package:remote_alarm/settings_page_add_device.dart';
+import 'package:remote_alarm/settings_page_clock_configure.dart';
 import 'package:remote_alarm/username_setup_dialog.dart';
 import 'package:settings_ui/settings_ui.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'clockid_setup_dialog.dart';
 import 'login_dialog.dart';
 
 Future<void> signout(BuildContext context) async {
@@ -31,24 +32,18 @@ class _SettingsPageState extends State<SettingsPage> {
   late String _username;
   late String _userEmail;
   late bool _loggedIn;
-  late String _clock_id;
   @override
   void initState() {
     super.initState();
     _username = 'nicht-gesetzt';
     _userEmail = 'abgemeldet';
-    _clock_id = 'uninitialisiert';
     _loggedIn = false;
     reloadSettings();
   }
 
   Future<void> reloadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
     if (Memory.instance.getUsername() != null) {
       _username = Memory.instance.getUsername()!;
-    }
-    if (prefs.getString("clock_id") != null) {
-      _clock_id = prefs.getString("clock_id")!;
     }
     if (FirebaseAuth.instance.currentUser != null) {
       _loggedIn = true;
@@ -58,6 +53,24 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     setState(() {});
+  }
+
+  SettingsSection userSettingsSection() {
+    return SettingsSection(
+      title: const Text('Benutzer'),
+      tiles: <SettingsTile>[
+        SettingsTile.navigation(
+          leading: const Icon(Icons.person),
+          title: const Text('Benutzername'),
+          value: Text(_username),
+          onPressed: (context) async {
+            await usernameDialogBuilder(context);
+            await reloadSettings();
+          },
+        ),
+        credentialWidget(),
+      ],
+    );
   }
 
   SettingsTile credentialWidget() {
@@ -86,6 +99,48 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  SettingsSection deviceSettingsSection() {
+    List<SettingsTile> deviceTileList = List.empty(growable: true);
+
+    deviceTileList.add(SettingsTile(
+      title: const Text("Gerät hinzufügen"),
+      description: const Text("Füge ein Gerät zur Liste hinzu"),
+      leading: const Icon(Icons.add),
+      onPressed: (context) async {
+        // Check if a new device can be added.
+        if (!memoryNewDeviceAdditionAllowed()) return;
+        await Navigator.push(context, MaterialPageRoute(builder: (context) {
+          return const SettingsPageAddDevice();
+        }));
+        setState(() {});
+      },
+    ));
+
+    bool noDevicesLoaded = true;
+
+    for (DeviceProperties device in Memory.instance.getDevices()) {
+      SettingsTile deviceTile = SettingsTile.navigation(
+        title: Text(device.id),
+        description: Text("Besitzer: ${device.receiverName}"),
+        leading: device.deviceType.icon,
+        onPressed: (context) async {},
+      );
+
+      deviceTileList.add(deviceTile);
+      noDevicesLoaded = false;
+    }
+
+    // Add a "no devices loaded" tile if there are no devices yet added.
+    if (noDevicesLoaded) {
+      deviceTileList.add(SettingsTile(
+          title: const Text("Keine Geräte verfügbar"),
+          enabled: false,
+          description: const Text("Füge ein Gerät mit der Option oben hinzu!"),
+          leading: const Icon(Icons.warning)));
+    }
+    return SettingsSection(title: const Text('Wecker'), tiles: deviceTileList);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!isLoggedIn()) {
@@ -97,43 +152,6 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
         appBar: AppBar(title: const Text('Einstellungen')),
         body: SettingsList(
-          sections: [
-            SettingsSection(
-              title: const Text('Benutzer'),
-              tiles: <SettingsTile>[
-                SettingsTile.navigation(
-                  leading: const Icon(Icons.person),
-                  title: const Text('Benutzername'),
-                  value: Text(_username),
-                  onPressed: (context) async {
-                    await usernameDialogBuilder(context);
-                    await reloadSettings();
-                  },
-                ),
-                credentialWidget(),
-              ],
-            ),
-            SettingsSection(
-              title: const Text('Wecker'),
-              tiles: <SettingsTile>[
-                SettingsTile.navigation(
-                  leading: const Icon(Icons.lock_clock),
-                  onPressed: (context) async {
-                    await clockidDialogBuilder(context);
-                    await reloadSettings();
-                  },
-                  title: Text(
-                    'Angesteuerter Wecker',
-                    style: TextStyle(
-                        color: (_clock_id == "uninitialisiert"
-                            ? Colors.red
-                            : Colors.black)),
-                  ),
-                  value: Text(_clock_id),
-                ),
-              ],
-            ),
-          ],
-        ));
+            sections: [userSettingsSection(), deviceSettingsSection()]));
   }
 }
