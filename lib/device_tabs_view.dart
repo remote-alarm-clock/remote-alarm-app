@@ -53,6 +53,8 @@ class NoDevicesAlert extends StatelessWidget {
 }
 
 class DeviceTabsView extends StatefulWidget {
+  final List<Widget> _tabs = List.empty(growable: true);
+  final List<Widget> _sites = List.empty(growable: true);
   DeviceTabsView() : super(key: tabsViewKey);
 
   @override
@@ -62,12 +64,12 @@ class DeviceTabsView extends StatefulWidget {
 class _DeviceTabsViewState extends State<DeviceTabsView>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  final List<Widget> _tabs = List.empty(growable: true);
-  final List<Widget> _sites = List.empty(growable: true);
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 0, vsync: this);
+    refreshTabController();
   }
 
   @override
@@ -81,7 +83,22 @@ class _DeviceTabsViewState extends State<DeviceTabsView>
       for (final device in Memory.instance.getDevices()) {
         dbRegisterListener(device);
       }
+      refreshTabController();
     });
+  }
+
+  void refreshTabController() {
+    final props = Memory.instance.getDevices();
+    _tabController.dispose();
+    widget._tabs.clear();
+    widget._sites.clear();
+
+    _tabController = TabController(length: props.length, vsync: this);
+
+    for (DeviceProperties device in props) {
+      widget._tabs.add(device.toTab());
+      widget._sites.add(MessageSendView(device: device));
+    }
   }
 
   IconButton settingsAction(BuildContext context) {
@@ -97,18 +114,19 @@ class _DeviceTabsViewState extends State<DeviceTabsView>
   }
 
   @override
+  void didUpdateWidget(covariant DeviceTabsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (Memory.instance.getDevices().length != _tabController.length) {
+      _tabController.dispose();
+      _tabController = TabController(
+          length: Memory.instance.getDevices().length, vsync: this);
+      print("updates");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final props = Memory.instance.getDevices();
-    _tabController = TabController(length: props.length, vsync: this);
-
-    _tabs.clear();
-    _sites.clear();
-
-    for (DeviceProperties device in props) {
-      _tabs.add(device.toTab());
-      _sites.add(MessageSendView(device: device));
-    }
-
     if (props.isEmpty) {
       return Scaffold(
           appBar: AppBar(
@@ -119,18 +137,17 @@ class _DeviceTabsViewState extends State<DeviceTabsView>
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(appTitle),
-        actions: <Widget>[settingsAction(context)],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: _tabs,
+        appBar: AppBar(
+          title: const Text(appTitle),
+          actions: <Widget>[settingsAction(context)],
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: widget._tabs,
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: _sites,
-      ),
-    );
+        body: TabBarView(
+          controller: _tabController,
+          children: widget._sites,
+        ));
   }
 }

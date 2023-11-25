@@ -8,7 +8,7 @@ import 'package:remote_alarm/settings_page.dart';
 
 class MessageSendView extends StatefulWidget {
   final DeviceProperties device;
-  MessageSendView({super.key, required this.device});
+  const MessageSendView({super.key, required this.device});
 
   @override
   State<MessageSendView> createState() => _MessageSendViewState();
@@ -65,6 +65,7 @@ class _MessageSendViewState extends State<MessageSendView> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 8),
+              Text(widget.device.id),
               Container(
                   width: fullScreenWidth,
                   child: Stack(
