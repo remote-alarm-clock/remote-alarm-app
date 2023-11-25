@@ -123,7 +123,12 @@ class _SettingsPageState extends State<SettingsPage> {
         title: Text(device.id),
         description: Text("Besitzer: ${device.receiverName}"),
         leading: device.deviceType.icon,
-        onPressed: (context) async {},
+        onPressed: (context) async {
+          await Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return SettingsPageClockConfigure(currentDevice: device);
+          }));
+          setState(() {});
+        },
       );
 
       deviceTileList.add(deviceTile);
