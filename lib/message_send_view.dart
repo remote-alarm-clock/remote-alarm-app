@@ -31,7 +31,7 @@ class _MessageSendViewState extends State<MessageSendView> {
 
   /// Send a new message to firebase
   void _sendMessage() async {
-    dbSendMessage(context, widget.device, messageToClock, useAlarm);
+    dbSendMessage(widget.device, messageToClock, useAlarm);
   }
 
   @override
@@ -174,9 +174,11 @@ class _MessageSendViewState extends State<MessageSendView> {
                       if (_formKey.currentState!.validate()) {
                         // Form is valid so display a snackbar, that the message will be sent out!
                         _formKey.currentState!.save();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Nachricht wird versendet...")));
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Nachricht wird versendet..."),
+                          duration: Duration(seconds: 1),
+                        ));
                         _sendMessage();
                       }
                     },

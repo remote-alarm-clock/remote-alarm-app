@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:background_fetch/background_fetch.dart';
 
 const appTitle = "Wecker";
+final scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
 /**
  * TODO
@@ -186,6 +187,9 @@ Future<void> initializeApp() async {
   // Initialize everything
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Load memory here
+  await Memory.instance.reload();
+
   // Do database checks here
 }
 
@@ -238,11 +242,14 @@ class App extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.done) {
           final auth = FirebaseAuth.instanceFor(
               app: Firebase.app(), persistence: Persistence.LOCAL);
-          return MaterialApp(title: appTitle, home: MainPage(title: appTitle));
+          return MaterialApp(
+              title: appTitle,
+              scaffoldMessengerKey: scaffoldKey,
+              home: MainPage(title: appTitle));
         }
 
         // Otherwise, show something whilst waiting for initialization to complete
-        return Loading();
+        return const Loading();
       },
     );
   }

@@ -97,8 +97,8 @@ class _ClockIDInputFieldState extends State<ClockIDInputField> {
                         _clockid = value!;
                         // Save new username to prefs
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                "Uhr-ID wird auf '$_clockid' gesetzt!")));
+                            content:
+                                Text("Uhr-ID wird auf '$_clockid' gesetzt!")));
                         final prefs = await SharedPreferences.getInstance();
                         prefs.setString("clock_id", _clockid);
                       },

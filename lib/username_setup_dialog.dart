@@ -82,7 +82,7 @@ class _UsernameInputFieldState extends State<UsernameInputField> {
           children: <Widget>[
             Expanded(
                 child: Padding(
-                    padding: EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 0.0),
+                    padding: const EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 0.0),
                     child: TextFormField(
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),

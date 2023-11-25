@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:remote_alarm/main.dart';
 
 final credentialFormKey = GlobalKey<FormState>();
 TextEditingController emailController = TextEditingController();
@@ -28,6 +29,7 @@ Future<void> loginDialogBuilder(BuildContext context) async {
             ),
             child: const Text('Anmelden'),
             onPressed: () async {
+              final ScaffoldMessengerState scaffold = scaffoldKey.currentState!;
               // Validate the username form
               if (credentialFormKey.currentState!.validate()) {
                 // Form is valid, so run the save function. Will also display snackbar with saving notification
@@ -37,15 +39,15 @@ Future<void> loginDialogBuilder(BuildContext context) async {
                       .signInWithEmailAndPassword(
                           email: username, password: passwordController.text);
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  scaffold.showSnackBar(SnackBar(
                       content: Text('Erfolgreich als $username angemeldet!')));
                 } on FirebaseAuthException catch (e) {
                   if (e.code == 'user-not-found') {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    scaffold.showSnackBar(const SnackBar(
                         content:
                             Text('Es gibt keinen Benutzer mit dieser Email!')));
                   } else if (e.code == 'wrong-password') {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    scaffold.showSnackBar(const SnackBar(
                         content:
                             Text('Das Passwort für den Benutzer ist falsch!')));
                   }
@@ -97,7 +99,7 @@ class _LoginFieldState extends State<LoginField> {
                   Text('Bitte melde dich bei deiner Firebase Datenbank an.')),
           Flexible(
               child: Padding(
-                  padding: EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 0.0),
+                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 0.0),
                   child: TextFormField(
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
@@ -123,7 +125,7 @@ class _LoginFieldState extends State<LoginField> {
                   ))),
           Flexible(
               child: Padding(
-                  padding: EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 0.0),
+                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 0.0),
                   child: TextFormField(
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
