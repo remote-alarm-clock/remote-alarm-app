@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:remote_alarm/backend.dart';
 import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/memory.dart';
 import 'package:remote_alarm/message_send_view.dart';
@@ -76,7 +77,11 @@ class _DeviceTabsViewState extends State<DeviceTabsView>
   }
 
   void refresh() {
-    setState(() {});
+    setState(() {
+      for (final device in Memory.instance.getDevices()) {
+        dbRegisterListener(device);
+      }
+    });
   }
 
   IconButton settingsAction(BuildContext context) {
@@ -87,7 +92,7 @@ class _DeviceTabsViewState extends State<DeviceTabsView>
           await Navigator.push(context, MaterialPageRoute(builder: (context) {
             return const SettingsPage();
           }));
-          setState(() {});
+          refresh();
         });
   }
 
