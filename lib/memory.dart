@@ -113,9 +113,11 @@ class MemoryBrokenException implements Exception {
   MemoryBrokenException(this.cause);
 }
 
-// Here is where the main save shit happens! Wow such wise. Such memory.
+/// Here is where the main save shit happens! Wow such wise. Such memory.
+/// The Memory class acts as a cache for data. Should something change somewhere else in code, call Memory.instance.reload() to refresh the cache. Thank you!
 class Memory {
   List<DeviceProperties> _devices = List.empty(growable: true);
+  String? _username;
 
   static final Memory instance = Memory();
 
@@ -126,26 +128,40 @@ class Memory {
     final List<DeviceProperties> devs = List.empty(growable: true);
 
     if (savedDevices == null || savedDevices.isEmpty) {
-      throw NoDevicesSavedException("Es wurden keine Geräte gespeichert!");
-    }
+      //throw NoDevicesSavedException("Es wurden keine Geräte gespeichert!");
+    } else {
+      for (String deviceID in savedDevices) {
+        final deviceReceiverName = prefs.getString("${deviceID}_receiver_name");
+        final deviceType = prefs.getString("${deviceID}_device_type");
 
-    for (String deviceID in savedDevices) {
-      final deviceReceiverName = prefs.getString("${deviceID}_receiver_name");
-      final deviceType = prefs.getString("${deviceID}_device_type");
-
-      if (deviceReceiverName == null || deviceType == null) {
-        throw MemoryBrokenException("Es fehlen Parameter vom Gerät $deviceID!");
+        if (deviceReceiverName == null || deviceType == null) {
+          // throw MemoryBrokenException("Es fehlen Parameter vom Gerät $deviceID!");
+        } else {
+          devs.add(DeviceProperties(
+              deviceID, deviceReceiverName, DeviceType.fromString(deviceType)));
+        }
       }
-
-      devs.add(DeviceProperties(
-          deviceID, deviceReceiverName, DeviceType.fromString(deviceType)));
     }
 
     // Only assign new devices once the entire list has loaded. Should avoid wheird cases (without using mutex :o)
     _devices = devs;
+
+    // Load other variables
+    _username = prefs.getString("username");
   }
 
   List<DeviceProperties> getDevices() {
     return _devices;
+  }
+
+  /// Warning! This can be null if no username is set. Should be validated externally! If so, one can set the username with setUsername(String)
+  String? getUsername() {
+    return _username;
+  }
+
+  Future<void> setUsername(String username) async {
+    _username = username;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("username", username);
   }
 }
