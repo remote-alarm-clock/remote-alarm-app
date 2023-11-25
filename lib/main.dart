@@ -7,7 +7,6 @@ import 'package:remote_alarm/device_tabs_view.dart';
 import 'package:remote_alarm/memory.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
-import 'settings_page.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -15,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 const appTitle = "Wecker";
 final scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+
 const int maximumAllowedDeviceCount = 5;
 
 /**
@@ -146,39 +146,6 @@ Future<void> showMessageFromClock(DatabaseEvent event) async {
   _showNotification("Nachricht von $userString", "$timeString\n$msgString");
 }
 
-class MainPage extends StatefulWidget {
-  final List<DeviceProperties> devices = List.empty(growable: true);
-
-  MainPage({Key? key, required this.title}) : super(key: key) {
-    devices.add(DeviceProperties("clock_1", "Tom", DeviceType.clock));
-    devices.add(DeviceProperties("clock_2", "Aleks", DeviceType.lack));
-  }
-
-  final String title;
-
-  @override
-  State<MainPage> createState() => _MainPageState();
-}
-
-class _MainPageState extends State<MainPage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(title: const Text(appTitle), actions: <Widget>[
-          IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Öffne Einstellungen',
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  return const SettingsPage();
-                }));
-              }),
-        ]),
-        //
-        body: DeviceTabsView(presentedDevices: widget.devices));
-  }
-}
-
 /**
  * LOADING SCREEN AND APP
  */
@@ -244,9 +211,10 @@ class App extends StatelessWidget {
           final auth = FirebaseAuth.instanceFor(
               app: Firebase.app(), persistence: Persistence.LOCAL);
           return MaterialApp(
-              title: appTitle,
-              scaffoldMessengerKey: scaffoldKey,
-              home: MainPage(title: appTitle));
+            title: appTitle,
+            scaffoldMessengerKey: scaffoldKey,
+            home: DeviceTabsView(),
+          );
         }
 
         // Otherwise, show something whilst waiting for initialization to complete
