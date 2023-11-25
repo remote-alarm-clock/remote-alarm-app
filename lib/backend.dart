@@ -4,7 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Check if the given clock id exists. True if the ID could be validated.
 Future<bool> dbValidateID(clockID) async {
-  final clock = await FirebaseDatabase.instance.ref("clocks/$clockID").get();
+  final clock = await FirebaseDatabase.instance
+      .ref("clocks/$clockID")
+      .limitToFirst(1)
+      .get();
   return clock.exists;
 }
 
@@ -29,7 +32,7 @@ void dbSendMessage(context, message, alarmActive) async {
 
   // Do not get any data, only call to check if the db exists.
   DatabaseReference clockRef = FirebaseDatabase.instance.ref("clocks/$clockID");
-  if (!(await clockRef.limitToFirst(1).get()).exists) {
+  if (!(await dbValidateID(clockID))) {
     // Stressy..
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
