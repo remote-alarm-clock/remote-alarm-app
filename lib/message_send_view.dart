@@ -7,7 +7,6 @@ import 'package:remote_alarm/checkbox_form_field.dart';
 import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/memory.dart';
 import 'package:remote_alarm/settings_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MessageSendView extends StatefulWidget {
   final DeviceProperties device;
@@ -42,19 +41,13 @@ class _MessageSendViewState extends State<MessageSendView> {
 
   void registerListener() async {
     // TODO: Move DB functions to backend
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("clock_id") == null) {
-      return;
-    }
-
-    final clockId = prefs.getString("clock_id")!;
     /**
      * REGISTER NOTIFICATION HANDLER FOR DATABASE CHANGE MESSAGE
      */
     DatabaseReference starCountRef = FirebaseDatabase.instance
-        .ref('clocks/$clockId/clock_fb/latest_clock_status_count');
+        .ref('clocks/${widget.device.id}/clock_fb/latest_clock_status_count');
     starCountRef.onValue.listen((DatabaseEvent event) async {
-      showMessageFromClock(event);
+      showMessageFromClock(event, widget.device);
     });
   }
 
@@ -128,12 +121,10 @@ class _MessageSendViewState extends State<MessageSendView> {
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   onChanged: (text) async {
                     print("Debug text event $text!");
-                    final prefs = await SharedPreferences.getInstance();
-                    if (prefs.getString("username") == null) {
+                    if (Memory.instance.getUsername() == null) {
                       return;
                     }
-                    final username = prefs.getString("username")!;
-                    previewMessage = "$username> $text"
+                    previewMessage = "${Memory.instance.getUsername()!}> $text"
                         .padRight(21)
                         .replaceAllMapped(
                             RegExp(r'.{21}'), (match) => "${match.group(0)}\n");
