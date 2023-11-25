@@ -12,6 +12,34 @@ Future<bool> dbValidateID(clockID) async {
   return clock.exists;
 }
 
+/// Loads a list of clock names from the db. WARNING: This downloads the entire DB. Should be used sparsely to not bill too much! (There is probably a more efficient way => Maybe storing names of clocks in separate DB?)
+Future<List<DeviceProperties>> dbGetDevices() async {
+  final List<DeviceProperties> devices = List.empty(growable: true);
+  final clock = await FirebaseDatabase.instance.ref("clocks").get();
+  if (!clock.exists) {
+    return devices;
+  }
+
+  for (final child in clock.children) {
+    String id = child.key!;
+    try {
+      String receiverName = child.child("clock_user").value!.toString();
+      String deviceType = child.child("clock_type").value!.toString();
+      DeviceType type = DeviceType.fromString(deviceType);
+      DeviceProperties prop = DeviceProperties(id, receiverName, type);
+
+      devices.add(prop);
+    } on Exception catch (_, e) {
+      print(e);
+      scaffoldKey.currentState!.showSnackBar(SnackBar(
+          content: Text(
+              "Es wurde ein Gerät '$id' gefunden, aber der Datenbankeintrag ist kaputt! Wird übersprungen.")));
+    }
+  }
+
+  return devices;
+}
+
 void dbSendMessage(
     DeviceProperties device, String message, bool alarmActive) async {
   final ScaffoldMessengerState scaffold = scaffoldKey.currentState!;
