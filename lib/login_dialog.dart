@@ -35,9 +35,8 @@ Future<void> loginDialogBuilder(BuildContext context) async {
                 // Form is valid, so run the save function. Will also display snackbar with saving notification
                 try {
                   String username = emailController.text;
-                  final credential = await FirebaseAuth.instance
-                      .signInWithEmailAndPassword(
-                          email: username, password: passwordController.text);
+                  await FirebaseAuth.instance.signInWithEmailAndPassword(
+                      email: username, password: passwordController.text);
                   Navigator.of(context).pop();
                   scaffold.showSnackBar(SnackBar(
                       content: Text('Erfolgreich als $username angemeldet!')));

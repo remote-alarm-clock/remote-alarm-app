@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/memory.dart';
 import 'package:remote_alarm/settings_page_add_device.dart';
 import 'package:remote_alarm/settings_page_clock_configure.dart';
