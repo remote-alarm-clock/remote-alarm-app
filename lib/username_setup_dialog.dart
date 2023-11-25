@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:remote_alarm/memory.dart';
 
 /// This file contains the username set dialog definitions and the corresponsing builder function.
 
@@ -58,16 +58,12 @@ class _UsernameInputFieldState extends State<UsernameInputField> {
 
   void readData() async {
     // Load the username async.
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("username") == null) {
-      setState(() => _username = "");
-      print("prefs are empty");
-    } else {
-      setState(() {
-        _username = prefs.getString("username")!;
-        print("prefs name loaded to $_username");
-      });
-    }
+    String? name = Memory.instance.getUsername();
+    name ??= "";
+    setState(() {
+      _username = name!;
+      print("Username loaded to $_username");
+    });
   }
 
   @override
@@ -103,8 +99,7 @@ class _UsernameInputFieldState extends State<UsernameInputField> {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text(
                                 "Benutzername wird auf '$_username' gesetzt!")));
-                        final prefs = await SharedPreferences.getInstance();
-                        prefs.setString("username", _username);
+                        await Memory.instance.setUsername(_username);
                       },
                       validator: (String? value) {
                         if (value == null || value.isEmpty) {

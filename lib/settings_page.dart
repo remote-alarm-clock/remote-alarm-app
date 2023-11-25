@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:remote_alarm/memory.dart';
 import 'package:remote_alarm/username_setup_dialog.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,8 +44,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> reloadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("username") != null) {
-      _username = prefs.getString("username")!;
+    if (Memory.instance.getUsername() != null) {
+      _username = Memory.instance.getUsername()!;
     }
     if (prefs.getString("clock_id") != null) {
       _clock_id = prefs.getString("clock_id")!;
@@ -117,7 +118,7 @@ class _SettingsPageState extends State<SettingsPage> {
               tiles: <SettingsTile>[
                 SettingsTile.navigation(
                   leading: const Icon(Icons.lock_clock),
-                  onPressed: (context) async{
+                  onPressed: (context) async {
                     await clockidDialogBuilder(context);
                     await reloadSettings();
                   },
