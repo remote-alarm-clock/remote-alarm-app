@@ -15,6 +15,7 @@ class SettingsPageAddDevice extends StatefulWidget {
 
 class _SettingsPageAddDeviceState extends State<SettingsPageAddDevice> {
   List<DeviceProperties> _devices = List.empty();
+  bool allDevicesAlreadyAdded = false;
   @override
   void initState() {
     super.initState();
@@ -31,6 +32,10 @@ class _SettingsPageAddDeviceState extends State<SettingsPageAddDevice> {
     }
 
     _devices = shownDevices;
+
+    if (dbDevices.isNotEmpty && shownDevices.isEmpty) {
+      allDevicesAlreadyAdded = true;
+    }
   }
 
   Future<void> saveNewDevice(
@@ -64,8 +69,9 @@ class _SettingsPageAddDeviceState extends State<SettingsPageAddDevice> {
       deviceTileList.add(SettingsTile(
           title: const Text("Keine Geräte verfügbar"),
           enabled: false,
-          description: const Text(
-              "In der Datenbank sind keine Geräte. Bitte zuerst ein Gerät mit Datenbank verbinden!"),
+          description: Text((allDevicesAlreadyAdded
+              ? "Alle Geräte aus der Datenbank wurden bereits hinzugefügt."
+              : "In der Datenbank sind keine Geräte. Bitte zuerst ein Gerät mit Datenbank verbinden!")),
           leading: const Icon(Icons.warning)));
     }
 

@@ -87,6 +87,7 @@ class _MessageSendViewState extends State<MessageSendView> {
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
+              const SizedBox(height: 8),
               Container(
                   width: fullScreenWidth,
                   child: Stack(
