@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:remote_alarm/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum DeviceType {
   clock,
   lack;
 
+  @override
+  String toString() {
+    return name.toString();
+  }
+
   /// Try to create DeviceType from String. If its not possible, throws an UnknownDeviceException!
-  static DeviceType fromString(String? devType) {
-    return DeviceType.values.firstWhere(
-        (element) => element.toString() == devType,
-        orElse: () => throw UnknownDeviceException(
-            "Das Gerät $devType ist nicht implementiert!"));
+  static DeviceType fromString(String devType) {
+    return DeviceType.values.firstWhere((element) =>
+        element.toString() ==
+        devType); //, orElse: () => throw UnknownDeviceException("Das Gerät $devType ist nicht implementiert!"));
   }
 }
 
@@ -34,7 +39,12 @@ class DeviceProperties {
   String receiverName;
   DeviceType deviceType;
 
-  DeviceProperties(devID, devReceiverName, devType)
+  @override
+  bool operator ==(Object other) {
+    return other is DeviceProperties && other.id == id;
+  }
+
+  DeviceProperties(String devID, String devReceiverName, DeviceType devType)
       : id = devID,
         receiverName = devReceiverName,
         deviceType = devType;
@@ -48,7 +58,7 @@ class DeviceProperties {
   }
 
   /// Try to save DeviceProperties into memory.
-  void save() async {
+  Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
 
     // ID in List
@@ -96,6 +106,9 @@ class DeviceProperties {
 
     return success;
   }
+
+  @override
+  int get hashCode => Object.hash(id, receiverName);
 }
 
 class UnknownDeviceException implements Exception {
@@ -164,4 +177,14 @@ class Memory {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("username", username);
   }
+}
+
+bool memoryNewDeviceAdditionAllowed() {
+  if (Memory.instance.getDevices().length >= maximumAllowedDeviceCount) {
+    scaffoldKey.currentState!.showSnackBar(const SnackBar(
+        content: Text(
+            "Es sind bereits $maximumAllowedDeviceCount Geräte hinzugefügt. Bitte ein Gerät entfernen, bevor ein neues hinzugefügt werden kann!")));
+    return false;
+  }
+  return true;
 }

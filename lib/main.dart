@@ -15,6 +15,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 const appTitle = "Wecker";
 final scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+const int maximumAllowedDeviceCount = 5;
 
 /**
  * TODO
