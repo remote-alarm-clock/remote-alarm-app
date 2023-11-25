@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:remote_alarm/backend.dart';
 import 'package:remote_alarm/device_tabs_view.dart';
 import 'package:remote_alarm/memory.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -80,7 +78,7 @@ void selectNotification(String? payload) async {
   }
 }*/
 
-Future<void> _showNotification(String title, String content) async {
+Future<void> showNotification(String title, String content) async {
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
       AndroidNotificationDetails(
           'arlm_clk_back_channel', 'Alarm Clock back channel',
@@ -98,55 +96,6 @@ Future<void> _showNotification(String title, String content) async {
  */
 
 /**
- * SHOW MESSAGE FROM CLOCK
- */
-Future<void> showMessageFromClock(DatabaseEvent event) async {
-  final prefs = await SharedPreferences.getInstance();
-  final data = event.snapshot.value;
-  final latestClockStatusCount = prefs.get('latest_clock_status_count') ?? -1;
-
-  final clock_id = prefs.getString('clock_id');
-  if (clock_id == null) {
-    print("Clock_ID is null!");
-    return;
-  }
-
-  // There already exists a message with that content, which has been displayed.
-  if (latestClockStatusCount != -1 &&
-      int.parse(data.toString()) == latestClockStatusCount) return;
-
-  // Save newest Code of Message
-  prefs.setInt('latest_clock_status_count', int.parse(data.toString()));
-
-  // Load Message Body
-  // TODO: Move DB functions to backend.
-  final msg = await FirebaseDatabase.instance
-      .ref("clocks/$clock_id/clock_fb/latest_clock_status")
-      .get();
-  final user =
-      await FirebaseDatabase.instance.ref("clocks/$clock_id/clock_user").get();
-  final utc = await FirebaseDatabase.instance
-      .ref("clocks/$clock_id/clock_fb/latest_clock_status_utc")
-      .get();
-
-  final userString = user.value.toString();
-  final msgString = msg.value.toString();
-  String timeString = ""; // Will be empty if no date is found.
-  if (utc.exists) {
-    final timestamp =
-        DateTime.fromMillisecondsSinceEpoch((utc.value as int) * 1000);
-    print(timestamp);
-    final DateFormat formatterDate = DateFormat("dd.MM.yyyy");
-    final DateFormat formatterTime = DateFormat("HH:mm");
-    final date = formatterDate.format(timestamp);
-    final time = formatterTime.format(timestamp);
-    timeString = "$date um $time Uhr";
-  }
-
-  _showNotification("Nachricht von $userString", "$timeString\n$msgString");
-}
-
-/**
  * LOADING SCREEN AND APP
  */
 
@@ -157,6 +106,10 @@ Future<void> initializeApp() async {
 
   // Load memory here
   await Memory.instance.reload();
+
+  for (final device in Memory.instance.getDevices()) {
+    await dbRegisterListener(device);
+  }
 
   // Do database checks here
 }

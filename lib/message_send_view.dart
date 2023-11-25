@@ -1,10 +1,8 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:remote_alarm/backend.dart';
 import 'package:remote_alarm/checkbox_form_field.dart';
-import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/memory.dart';
 import 'package:remote_alarm/settings_page.dart';
 
@@ -36,19 +34,6 @@ class _MessageSendViewState extends State<MessageSendView> {
   @override
   void initState() {
     super.initState();
-    registerListener();
-  }
-
-  void registerListener() async {
-    // TODO: Move DB functions to backend
-    /**
-     * REGISTER NOTIFICATION HANDLER FOR DATABASE CHANGE MESSAGE
-     */
-    DatabaseReference starCountRef = FirebaseDatabase.instance
-        .ref('clocks/${widget.device.id}/clock_fb/latest_clock_status_count');
-    starCountRef.onValue.listen((DatabaseEvent event) async {
-      showMessageFromClock(event, widget.device);
-    });
   }
 
   @override
@@ -60,7 +45,6 @@ class _MessageSendViewState extends State<MessageSendView> {
         }));
       });
     }
-    registerListener();
 
     print("Current clock ID ${widget.device.id}");
 

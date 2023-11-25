@@ -38,16 +38,17 @@ class DeviceProperties {
   String id;
   String receiverName;
   DeviceType deviceType;
+  int lastClockStatusCount;
+  String lastMessage;
+  String lastTime;
 
   @override
   bool operator ==(Object other) {
     return other is DeviceProperties && other.id == id;
   }
 
-  DeviceProperties(String devID, String devReceiverName, DeviceType devType)
-      : id = devID,
-        receiverName = devReceiverName,
-        deviceType = devType;
+  DeviceProperties(this.id, this.receiverName, this.deviceType,
+      this.lastClockStatusCount, this.lastMessage, this.lastTime);
 
   /// Create Tab widget from the properties of this device.
   Widget toTab() {
@@ -75,6 +76,15 @@ class DeviceProperties {
     // Device Type
     await prefs.setString("${id}_device_type", deviceType.toString());
 
+    // Status Count
+    await prefs.setInt("${id}_last_clock_status_count", lastClockStatusCount);
+
+    // Last Message
+    await prefs.setString("${id}_last_clock_status", lastMessage);
+
+    // Last Time of Message
+    await prefs.setString("${id}_last_clock_status_utc", lastTime);
+
     // Make the memory instance have newest data.
     await Memory.instance.reload();
   }
@@ -100,6 +110,15 @@ class DeviceProperties {
 
     // Device Type
     success = await prefs.remove("${id}_device_type");
+
+    // Status Count
+    success = await prefs.remove("${id}_last_clock_status_count");
+
+    // Last Message
+    success = await prefs.remove("${id}_last_clock_status");
+
+    // Last Time of Message
+    success = await prefs.remove("${id}_last_clock_status_utc");
 
     // Make the memory instance have newest data.
     await Memory.instance.reload();
@@ -146,12 +165,26 @@ class Memory {
       for (String deviceID in savedDevices) {
         final deviceReceiverName = prefs.getString("${deviceID}_receiver_name");
         final deviceType = prefs.getString("${deviceID}_device_type");
+        final deviceStatusCount =
+            prefs.getInt("${deviceID}_last_clock_status_count");
+        final deviceMessage = prefs.getString("${deviceID}_last_clock_status");
+        final deviceMessageTime =
+            prefs.getString("${deviceID}_last_clock_status_utc");
 
-        if (deviceReceiverName == null || deviceType == null) {
+        if (deviceReceiverName == null ||
+            deviceType == null ||
+            deviceStatusCount == null ||
+            deviceMessage == null ||
+            deviceMessageTime == null) {
           // throw MemoryBrokenException("Es fehlen Parameter vom Gerät $deviceID!");
         } else {
           devs.add(DeviceProperties(
-              deviceID, deviceReceiverName, DeviceType.fromString(deviceType)));
+              deviceID,
+              deviceReceiverName,
+              DeviceType.fromString(deviceType),
+              deviceStatusCount,
+              deviceMessage,
+              deviceMessageTime));
         }
       }
     }

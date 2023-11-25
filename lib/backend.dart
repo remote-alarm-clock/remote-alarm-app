@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/memory.dart';
 
@@ -26,7 +27,14 @@ Future<List<DeviceProperties>> dbGetDevices() async {
       String receiverName = child.child("clock_user").value!.toString();
       String deviceType = child.child("clock_type").value!.toString();
       DeviceType type = DeviceType.fromString(deviceType);
-      DeviceProperties prop = DeviceProperties(id, receiverName, type);
+      String deviceStatusCount = child
+          .child("clock_fb")
+          .child("latest_clock_status_count")
+          .value!
+          .toString();
+      int deviceStatusCountInt = int.parse(deviceStatusCount);
+      DeviceProperties prop = DeviceProperties(
+          id, receiverName, type, deviceStatusCountInt, "nicht geladen", "");
 
       devices.add(prop);
     } on Exception catch (_, e) {
@@ -95,4 +103,51 @@ void dbSendMessage(
     "latest_message_id": newMessageID
   });
   scaffold.showSnackBar(const SnackBar(content: Text("Nachricht ist raus!")));
+}
+
+Future<void> dbShowMessageFromClock(
+    DatabaseEvent event, DeviceProperties device) async {
+  final newStatusCount = int.parse(event.snapshot.value.toString());
+
+  // Do not display notification if message is consistent
+  if (newStatusCount == device.lastClockStatusCount) return;
+
+  // Load Message Body
+  final msg = await FirebaseDatabase.instance
+      .ref("clocks/${device.id}/clock_fb/latest_clock_status")
+      .get();
+  final utc = await FirebaseDatabase.instance
+      .ref("clocks/${device.id}/clock_fb/latest_clock_status_utc")
+      .get();
+
+  final msgString = msg.value.toString();
+  String timeString = ""; // Will be empty if no date is found.
+  if (utc.exists) {
+    final timestamp =
+        DateTime.fromMillisecondsSinceEpoch((utc.value as int) * 1000);
+    final DateFormat formatterDate = DateFormat("dd.MM.yyyy");
+    final DateFormat formatterTime = DateFormat("HH:mm");
+    final date = formatterDate.format(timestamp);
+    final time = formatterTime.format(timestamp);
+    timeString = "$date um $time Uhr";
+  }
+
+  // Save everything
+  device.lastClockStatusCount = newStatusCount;
+  device.lastMessage = msgString;
+  device.lastTime = timeString;
+
+  await device.save();
+
+  showNotification(
+      "Nachricht von ${device.receiverName}", "$timeString\n$msgString");
+}
+
+/// Register a notification listener for the specific device properties.
+Future<void> dbRegisterListener(DeviceProperties device) async {
+  DatabaseReference starCountRef = FirebaseDatabase.instance
+      .ref('clocks/${device.id}/clock_fb/latest_clock_status_count');
+  starCountRef.onValue.listen((DatabaseEvent event) async {
+    dbShowMessageFromClock(event, device);
+  });
 }
