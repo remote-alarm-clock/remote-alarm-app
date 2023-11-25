@@ -9,7 +9,6 @@ import 'package:remote_alarm/memory.dart';
 import 'package:remote_alarm/settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class MessageSendView extends StatefulWidget {
   final DeviceProperties device;
   MessageSendView({super.key, required this.device});
@@ -32,7 +31,7 @@ class _MessageSendViewState extends State<MessageSendView> {
 
   /// Send a new message to firebase
   void _sendMessage() async {
-    dbSendMessage(context, messageToClock, useAlarm);
+    dbSendMessage(context, widget.device, messageToClock, useAlarm);
   }
 
   @override

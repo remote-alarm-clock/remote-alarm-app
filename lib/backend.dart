@@ -1,6 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:remote_alarm/memory.dart';
 
 /// Check if the given clock id exists. True if the ID could be validated.
 Future<bool> dbValidateID(clockID) async {
@@ -11,32 +11,31 @@ Future<bool> dbValidateID(clockID) async {
   return clock.exists;
 }
 
-void dbSendMessage(context, message, alarmActive) async {
+void dbSendMessage(BuildContext context, DeviceProperties device,
+    String message, bool alarmActive) async {
   // Check if username has been set
-  final prefs = await SharedPreferences.getInstance();
-  if (prefs.getString("username") == null) {
+  if (Memory.instance.getUsername() == null) {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text(
             "Es wurde kein Benutzername gesetzt. Bitte wähle als erstes einen Namen.")));
     return;
   }
-  if (prefs.getString("clock_id") == null) {
+  /* Maybe move this check somewhere else? 
+ if (device.id == null) {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content:
             Text("Es wurde keine Clock_ID gesetzt. Bitte wähle eine aus.")));
     return;
-  }
-
-  final username = prefs.getString("username")!;
-  final clockID = prefs.getString("clock_id")!;
+  }*/
 
   // Do not get any data, only call to check if the db exists.
-  DatabaseReference clockRef = FirebaseDatabase.instance.ref("clocks/$clockID");
-  if (!(await dbValidateID(clockID))) {
+  DatabaseReference clockRef =
+      FirebaseDatabase.instance.ref("clocks/${device.id}");
+  if (!(await dbValidateID(device.id))) {
     // Stressy..
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-            "Es existiert keine Uhr mit der ID '$clockID'! Bitte ID ändern.")));
+            "Es existiert kein Gerät mit der ID '${device.id}'! Bitte ID ändern.")));
     return;
   }
 
@@ -58,7 +57,7 @@ void dbSendMessage(context, message, alarmActive) async {
 
   // Push new Message to Stack
   await messagesRef.update({
-    "$newMessageID/sender_name": username,
+    "$newMessageID/sender_name": Memory.instance.getUsername()!,
     "$newMessageID/text": message,
     "$newMessageID/bell": (alarmActive ? 1 : 0),
     "$newMessageID/timestamp":
