@@ -24,7 +24,7 @@ class _DeviceTabsViewState extends State<DeviceTabsView>
         TabController(length: widget.presentedDevices.length, vsync: this);
 
     for (DeviceProperties device in widget.presentedDevices) {
-      _tabs.add(deviceToTab(device));
+      _tabs.add(device.toTab());
       _sites.add(MessageSendView(device: device));
     }
   }
