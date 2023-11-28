@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:remote_alarm/main.dart';
+import 'package:remote_alarm/message_send_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum DeviceType {
@@ -56,6 +57,10 @@ class DeviceProperties {
       text: receiverName,
       icon: deviceType.icon,
     );
+  }
+
+  Widget toMessageView() {
+    return MessageSendView(device: this);
   }
 
   /// Try to save DeviceProperties into memory.

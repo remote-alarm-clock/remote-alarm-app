@@ -14,10 +14,14 @@ class MessageSendView extends StatefulWidget {
   State<MessageSendView> createState() => _MessageSendViewState();
 }
 
-class _MessageSendViewState extends State<MessageSendView> {
+class _MessageSendViewState extends State<MessageSendView>
+    with AutomaticKeepAliveClientMixin {
   final _formKey = GlobalKey<FormState>();
   final letterLimitForMessage = 126;
   final clockImage = 'assets/clockface_zoom.svg';
+
+  @override
+  bool get wantKeepAlive => true;
 
   bool useAlarm = false;
   String messageToClock = ""; // What will be sent to server (unclean)
@@ -32,12 +36,8 @@ class _MessageSendViewState extends State<MessageSendView> {
   }
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (!isLoggedIn()) {
       SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
         Navigator.push(context, MaterialPageRoute(builder: (context) {
@@ -65,7 +65,6 @@ class _MessageSendViewState extends State<MessageSendView> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 8),
-              Text(widget.device.id),
               Container(
                   width: fullScreenWidth,
                   child: Stack(
