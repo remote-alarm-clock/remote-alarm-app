@@ -25,8 +25,11 @@ Future<List<DeviceProperties>> dbGetDevices() async {
     String id = child.key!;
     try {
       String receiverName = child.child("clock_user").value!.toString();
-      String deviceType = child.child("clock_type").value!.toString();
-      DeviceType type = DeviceType.fromString(deviceType);
+      DeviceType type = DeviceType.unknown;
+      if (child.child("clock_type").exists) {
+        String deviceType = child.child("clock_type").value!.toString();
+        type = DeviceType.fromString(deviceType);
+      }
       String deviceStatusCount = child
           .child("clock_fb")
           .child("latest_clock_status_count")

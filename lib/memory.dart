@@ -4,6 +4,7 @@ import 'package:remote_alarm/message_send_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum DeviceType {
+  unknown,
   clock,
   lack;
 
@@ -14,9 +15,9 @@ enum DeviceType {
 
   /// Try to create DeviceType from String. If its not possible, throws an UnknownDeviceException!
   static DeviceType fromString(String devType) {
-    return DeviceType.values.firstWhere((element) =>
-        element.toString() ==
-        devType); //, orElse: () => throw UnknownDeviceException("Das Gerät $devType ist nicht implementiert!"));
+    return DeviceType.values.firstWhere(
+        (element) => element.toString() == devType,
+        orElse: () => unknown);
   }
 }
 
@@ -29,6 +30,7 @@ extension DeviceTypeIcon on DeviceType {
         return const Icon(Icons.alarm);
       case DeviceType.lack:
         return const Icon(Icons.remove);
+      case DeviceType.unknown:
       default:
         return const Icon(Icons.question_mark);
     }
