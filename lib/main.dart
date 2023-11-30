@@ -102,7 +102,9 @@ Future<void> showNotification(String title, String content) async {
 /// Method where all initializations happen and all pre build checks are supposed to be done! (Like async DB checks and builders!)
 Future<void> initializeApp() async {
   // Initialize everything
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+      name: "Remote Alarm App",
+      options: DefaultFirebaseOptions.currentPlatform);
 
   // Load memory here
   await Memory.instance.reload();
@@ -156,12 +158,13 @@ class App extends StatelessWidget {
         // Check for errors
         if (snapshot.hasError) {
           print("Something went wrong");
+          print(snapshot.error.toString());
           return const SomethingWentWrong();
         }
 
         // Once complete, show your application
         if (snapshot.connectionState == ConnectionState.done) {
-          final auth = FirebaseAuth.instanceFor(
+          FirebaseAuth.instanceFor(
               app: Firebase.app(), persistence: Persistence.LOCAL);
           return MaterialApp(
             title: appTitle,
