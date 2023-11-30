@@ -6,6 +6,69 @@ import 'package:remote_alarm/checkbox_form_field.dart';
 import 'package:remote_alarm/memory.dart';
 import 'package:remote_alarm/settings_page.dart';
 
+/// This widget displays a preview of the message to be sent to the device.
+class MessagePreView extends StatefulWidget {
+  final DeviceProperties displayedDevice;
+  String _displayedMessage = "";
+
+  MessagePreView(String displayedMessage,
+      {super.key, required this.displayedDevice})
+      : _displayedMessage = displayedMessage;
+
+  @override
+  State<MessagePreView> createState() => _MessagePreViewState();
+}
+
+class _MessagePreViewState extends State<MessagePreView> {
+  final clockImage = 'assets/clockface_zoom.svg';
+
+  /// This is exactly what will be displayed. Format eralier please.
+  void updateMessage(String message) {
+    setState(() {
+      widget._displayedMessage = message;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double width =
+        MediaQuery.of(context).size.width * 0.4; //40% of screen width
+
+    double fullScreenWidth =
+        MediaQuery.of(context).size.width; //100% of screen width
+
+    return SizedBox(
+        width: fullScreenWidth,
+        child: Stack(
+          children: [
+            SvgPicture.asset(clockImage,
+                width: fullScreenWidth,
+                semanticsLabel: 'clockface'), // Background picture of clockface
+            // Image aspect ratio: 0.5053, left relative to image: 0.2565, top relative to height: 0.2737
+            Positioned(
+              top: fullScreenWidth * 0.5053 * 0.2737, // height * top spacing
+              left: fullScreenWidth * 0.2565, // width * left spacing
+              child: Container(
+                alignment: Alignment.topLeft,
+                width: width,
+                height: 0.65 * width, // Match 128*64 aspect ratio
+                child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                        widget._displayedMessage.padRight(21).replaceAllMapped(
+                            RegExp(r'.{21}'), (match) => "${match.group(0)}\n"),
+                        textAlign: TextAlign.left,
+                        style: const TextStyle(
+                            fontSize: 90,
+                            fontFamily: 'RobotoMono',
+                            color: Colors.white))), // Display
+              ),
+            )
+          ],
+        ));
+  }
+}
+
 class MessageSendView extends StatefulWidget {
   final DeviceProperties device;
   const MessageSendView({super.key, required this.device});
@@ -17,22 +80,24 @@ class MessageSendView extends StatefulWidget {
 class _MessageSendViewState extends State<MessageSendView>
     with AutomaticKeepAliveClientMixin {
   final _formKey = GlobalKey<FormState>();
+  final _messageDisplayKey = GlobalKey<_MessagePreViewState>();
   final letterLimitForMessage = 126;
-  final clockImage = 'assets/clockface_zoom.svg';
 
   @override
   bool get wantKeepAlive => true;
 
   bool useAlarm = false;
   String messageToClock = ""; // What will be sent to server (unclean)
-  String previewMessage =
-      " "; // What is displayed (also preprocessed with newlines)
 
   //final String senderName = "App";
 
   /// Send a new message to firebase
   void _sendMessage() async {
     dbSendMessage(widget.device, messageToClock, useAlarm);
+  }
+
+  String _formatMessage(String messageToDisplay) {
+    return "${Memory.instance.getUsername()!}> $messageToDisplay";
   }
 
   @override
@@ -48,11 +113,6 @@ class _MessageSendViewState extends State<MessageSendView>
 
     print("Current clock ID ${widget.device.id}");
 
-    double width =
-        MediaQuery.of(context).size.width * 0.4; //40% of screen width
-
-    double fullScreenWidth =
-        MediaQuery.of(context).size.width; //100% of screen width
     // This method is rerun every time setState is called,
     // for instance, as done by the _increment method above.
     // The Flutter framework has been optimized to make
@@ -65,38 +125,11 @@ class _MessageSendViewState extends State<MessageSendView>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 8),
-              Container(
-                  width: fullScreenWidth,
-                  child: Stack(
-                    children: [
-                      SvgPicture.asset(clockImage,
-                          width: fullScreenWidth,
-                          semanticsLabel:
-                              'clockface'), // Background picture of clockface
-                      // Image aspect ratio: 0.5053, left relative to image: 0.2565, top relative to height: 0.2737
-                      Positioned(
-                        top: fullScreenWidth *
-                            0.5053 *
-                            0.2737, // height * top spacing
-                        left: fullScreenWidth * 0.2565, // width * left spacing
-                        child: Container(
-                          alignment: Alignment.topLeft,
-                          width: width,
-                          height: 0.65 * width, // Match 128*64 aspect ratio
-                          child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(previewMessage,
-                                  textAlign: TextAlign.left,
-                                  style: const TextStyle(
-                                      fontSize: 90,
-                                      fontFamily: 'RobotoMono',
-                                      color: Colors.white))), // Display
-                        ),
-                      )
-                    ],
-                  )),
+              MessagePreView(_formatMessage(""),
+                  key: _messageDisplayKey, displayedDevice: widget.device),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
                 child: TextFormField(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
@@ -108,12 +141,9 @@ class _MessageSendViewState extends State<MessageSendView>
                     if (Memory.instance.getUsername() == null) {
                       return;
                     }
-                    previewMessage = "${Memory.instance.getUsername()!}> $text"
-                        .padRight(21)
-                        .replaceAllMapped(
-                            RegExp(r'.{21}'), (match) => "${match.group(0)}\n");
-                    print("Now message: $previewMessage");
-                    setState(() => {});
+                    // Show message on screen
+                    _messageDisplayKey.currentState!
+                        .updateMessage(_formatMessage(text));
                   },
                   onSaved: (String? value) {
                     print("Message to Clock is: '$value'");
