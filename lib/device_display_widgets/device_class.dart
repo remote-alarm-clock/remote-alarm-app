@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:remote_alarm/memory.dart';
+
+import 'device_type.dart';
+
+/**
+ * HOW TO ADD DeviceClasses
+ * 
+ * Hello. In order to add a new device type to the app you got to do several things
+ * - First: Go to 'device_type.dart' and add a new enum with the exact name of the type you want to support. (No Spaces allowed.) This name is used 1to1 in the serialization to Firebase. So chose wisely. (Also name should match, whats in the devices firmware.)
+ * - Second: Add a new class here which 'implements DeviceClass' For orientation you can use the 'NotImplementedDevice' sample. 
+ * - Third: Go back to 'device_type.dart' and expand the 'deviceClass' getters switch statement to return your new class. (See 'unknown' example aswell).
+ * - Fourth: Stonks.
+ */
 
 /// This packages all display methods for the device into a convenient class for the masses.
 abstract class DeviceClass {
   const DeviceClass();
+
+  /// When displaying the `MessageSendView` class this functions gets called a lot to render a preview of the message on the device. Here you can enjoy maximum creativity with images and stuff. Thats why the BuildContext is given.
+  /// [messagePreviewed] The message string which the user wants to send. Unformatted.
+  /// [username] The users username. At this point, it will be non-empty.
   Widget toMessagePreview(
       BuildContext context, String messagePreviewed, String username);
   Widget toIcon();
@@ -47,6 +62,7 @@ class NotImplementedDevice implements DeviceClass {
 // icons.alarm and icons.remove for clock and lack
 
 /* 
+  final clockImage = 'assets/clockface_zoom.svg';
  double width =
         MediaQuery.of(context).size.width * 0.4; //40% of screen width
 

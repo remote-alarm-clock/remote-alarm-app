@@ -4,34 +4,7 @@ import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/message_send_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum DeviceType {
-  unknown,
-  clock,
-  lack;
-
-  @override
-  String toString() {
-    return name.toString();
-  }
-
-  /// Try to create DeviceType from String. If its not possible, throws an UnknownDeviceException!
-  static DeviceType fromString(String devType) {
-    return DeviceType.values.firstWhere(
-        (element) => element.toString() == devType,
-        orElse: () => unknown);
-  }
-}
-
-// Cool type of extensions on values (instead of creating methods on the enum).
-extension DeviceTypeClass on DeviceType {
-  DeviceClass get deviceClass {
-    switch (this) {
-      case DeviceType.unknown:
-      default:
-        return const NotImplementedDevice();
-    }
-  }
-}
+import 'device_display_widgets/device_type.dart';
 
 class DeviceProperties {
   String id;

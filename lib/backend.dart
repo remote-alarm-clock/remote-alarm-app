@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/memory.dart';
 
+import 'device_display_widgets/device_type.dart';
+
 /// Check if the given clock id exists. True if the ID could be validated.
 Future<bool> dbValidateID(clockID) async {
   final clock = await FirebaseDatabase.instance

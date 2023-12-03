@@ -19,8 +19,6 @@ class MessagePreView extends StatefulWidget {
 }
 
 class _MessagePreViewState extends State<MessagePreView> {
-  final clockImage = 'assets/clockface_zoom.svg';
-
   void updateMessage(String message) {
     widget._displayedMessage = message;
     setState(() {});
