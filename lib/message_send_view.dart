@@ -60,26 +60,7 @@ class _MessageSendViewState extends State<MessageSendView>
   }
 
   String? _validate(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Bitte gebe eine Nachricht ein!";
-    }
-    // Do programmer defined validation here.
-    List valid = widget.device.deviceClass.isMessageValid(value);
-    if (valid.isEmpty || valid[0] is! bool) {
-      print(
-          "The validator feature is not implmenented properly! Please refine the DeviceClass.isMessageValid(String) implementation of ${widget.device.deviceClass.toString()} to return a List with first element being a bool!");
-      return "Programmierfehler! Nachricht kann nicht validiert werden.";
-    }
-    if (!valid[0]) {
-      // Check if there is a custom error message. If so display it.
-      if (valid.length > 1 ||
-          valid[1] is String ||
-          (valid[1] as String).isNotEmpty) {
-        return valid[1] as String;
-      }
-      return "Nachricht ist ungültig!";
-    }
-    return null;
+    return dbValidateMessage(value, widget.device);
   }
 
   /*String _formatMessage(String messageToDisplay) {
