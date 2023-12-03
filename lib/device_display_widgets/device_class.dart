@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 import 'device_type.dart';
 
@@ -7,7 +8,8 @@ import 'device_type.dart';
  * 
  * Hello. In order to add a new device type to the app you got to do several things
  * - First: Go to 'device_type.dart' and add a new enum with the exact name of the type you want to support. (No Spaces allowed.) This name is used 1to1 in the serialization to Firebase. So chose wisely. (Also name should match, whats in the devices firmware.)
- * - Second: Add a new class here which 'implements DeviceClass' For orientation you can use the 'NotImplementedDevice' sample. 
+ * - Second: Add a new class here which 'implements DeviceClass' For orientation you can use the 'NotImplementedDevice' sample. Naming: ALWAYS use a descriptive name. Also the name should end with 'Device'.
+ *           Don't forget to add a 'const' constructor. Put the class into a new file naming it 'device_class_{name}.dart'.
  * - Third: Go back to 'device_type.dart' and expand the 'deviceClass' getters switch statement to return your new class. (See 'unknown' example aswell).
  * - Fourth: Stonks.
  */
@@ -82,43 +84,6 @@ class NotImplementedDevice implements DeviceClass {
   }
 }
 
+
 // icons.alarm and icons.remove for clock and lack
 
-/* 
-  final letterLimitForMessage = 126;
-  final clockImage = 'assets/clockface_zoom.svg';
- double width =
-        MediaQuery.of(context).size.width * 0.4; //40% of screen width
-
-    double fullScreenWidth =
-        MediaQuery.of(context).size.width; //100% of screen width
-
-    return SizedBox(
-        width: fullScreenWidth,
-        child: Stack(
-          children: [
-            SvgPicture.asset(clockImage,
-                width: fullScreenWidth,
-                semanticsLabel: 'clockface'), // Background picture of clockface
-            // Image aspect ratio: 0.5053, left relative to image: 0.2565, top relative to height: 0.2737
-            Positioned(
-              top: fullScreenWidth * 0.5053 * 0.2737, // height * top spacing
-              left: fullScreenWidth * 0.2565, // width * left spacing
-              child: Container(
-                alignment: Alignment.topLeft,
-                width: width,
-                height: 0.65 * width, // Match 128*64 aspect ratio
-                child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                        widget._displayedMessage.padRight(21).replaceAllMapped(
-                            RegExp(r'.{21}'), (match) => "${match.group(0)}\n"),
-                        textAlign: TextAlign.left,
-                        style: const TextStyle(
-                            fontSize: 90,
-                            fontFamily: 'RobotoMono',
-                            color: Colors.white))), // Display
-              ),
-            )
-          ],
-        ));*/
