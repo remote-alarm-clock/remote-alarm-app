@@ -1,4 +1,6 @@
 import 'device_class.dart';
+import 'device_class_clock.dart';
+import 'device_class_unimplemented.dart';
 
 /// Enum which carries the supported device types
 enum DeviceType {
@@ -23,6 +25,8 @@ enum DeviceType {
 extension DeviceTypeClass on DeviceType {
   DeviceClass get deviceClass {
     switch (this) {
+      case DeviceType.clock:
+        return const ClockDevice();
       case DeviceType.unknown:
       default:
         return const NotImplementedDevice();
