@@ -8,19 +8,17 @@ import 'package:remote_alarm/settings_page.dart';
 /// This widget displays a preview of the message to be sent to the device.
 class MessagePreView extends StatefulWidget {
   final DeviceProperties displayedDevice;
-  String _displayedMessage = "";
 
-  MessagePreView(String displayedMessage,
-      {super.key, required this.displayedDevice})
-      : _displayedMessage = displayedMessage;
+  const MessagePreView({super.key, required this.displayedDevice});
 
   @override
   State<MessagePreView> createState() => _MessagePreViewState();
 }
 
 class _MessagePreViewState extends State<MessagePreView> {
+  String _displayedMessage = "";
   void updateMessage(String message) {
-    widget._displayedMessage = message;
+    _displayedMessage = message;
     setState(() {});
   }
 
@@ -29,7 +27,7 @@ class _MessagePreViewState extends State<MessagePreView> {
     String username = Memory.instance.getUsername() ??
         ""; // If there is no username, give empty String.
     return widget.displayedDevice.deviceClass
-        .toMessagePreview(context, widget._displayedMessage, username);
+        .toMessagePreview(context, _displayedMessage, username);
   }
 }
 
@@ -92,7 +90,7 @@ class _MessageSendViewState extends State<MessageSendView>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 8),
-              MessagePreView("",
+              MessagePreView(
                   key: _messageDisplayKey, displayedDevice: widget.device),
               Padding(
                 padding:
