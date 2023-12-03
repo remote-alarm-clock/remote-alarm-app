@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:remote_alarm/backend.dart';
 import 'package:remote_alarm/checkbox_form_field.dart';
 import 'package:remote_alarm/memory.dart';
@@ -22,50 +21,17 @@ class MessagePreView extends StatefulWidget {
 class _MessagePreViewState extends State<MessagePreView> {
   final clockImage = 'assets/clockface_zoom.svg';
 
-  /// This is exactly what will be displayed. Format eralier please.
   void updateMessage(String message) {
-    setState(() {
-      widget._displayedMessage = message;
-    });
+    widget._displayedMessage = message;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    double width =
-        MediaQuery.of(context).size.width * 0.4; //40% of screen width
-
-    double fullScreenWidth =
-        MediaQuery.of(context).size.width; //100% of screen width
-
-    return SizedBox(
-        width: fullScreenWidth,
-        child: Stack(
-          children: [
-            SvgPicture.asset(clockImage,
-                width: fullScreenWidth,
-                semanticsLabel: 'clockface'), // Background picture of clockface
-            // Image aspect ratio: 0.5053, left relative to image: 0.2565, top relative to height: 0.2737
-            Positioned(
-              top: fullScreenWidth * 0.5053 * 0.2737, // height * top spacing
-              left: fullScreenWidth * 0.2565, // width * left spacing
-              child: Container(
-                alignment: Alignment.topLeft,
-                width: width,
-                height: 0.65 * width, // Match 128*64 aspect ratio
-                child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                        widget._displayedMessage.padRight(21).replaceAllMapped(
-                            RegExp(r'.{21}'), (match) => "${match.group(0)}\n"),
-                        textAlign: TextAlign.left,
-                        style: const TextStyle(
-                            fontSize: 90,
-                            fontFamily: 'RobotoMono',
-                            color: Colors.white))), // Display
-              ),
-            )
-          ],
-        ));
+    String username = Memory.instance.getUsername() ??
+        ""; // If there is no username, give empty String.
+    return widget.displayedDevice.deviceClass
+        .toMessagePreview(context, widget._displayedMessage, username);
   }
 }
 
@@ -96,9 +62,9 @@ class _MessageSendViewState extends State<MessageSendView>
     dbSendMessage(widget.device, messageToClock, useAlarm);
   }
 
-  String _formatMessage(String messageToDisplay) {
+  /*String _formatMessage(String messageToDisplay) {
     return "${Memory.instance.getUsername()!}> $messageToDisplay";
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +91,7 @@ class _MessageSendViewState extends State<MessageSendView>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 8),
-              MessagePreView(_formatMessage(""),
+              MessagePreView("",
                   key: _messageDisplayKey, displayedDevice: widget.device),
               Padding(
                 padding:
@@ -142,8 +108,7 @@ class _MessageSendViewState extends State<MessageSendView>
                       return;
                     }
                     // Show message on screen
-                    _messageDisplayKey.currentState!
-                        .updateMessage(_formatMessage(text));
+                    _messageDisplayKey.currentState!.updateMessage(text);
                   },
                   onSaved: (String? value) {
                     print("Message to Clock is: '$value'");

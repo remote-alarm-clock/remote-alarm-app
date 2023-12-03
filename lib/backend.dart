@@ -36,8 +36,8 @@ Future<List<DeviceProperties>> dbGetDevices() async {
           .value!
           .toString();
       int deviceStatusCountInt = int.parse(deviceStatusCount);
-      DeviceProperties prop = DeviceProperties(
-          id, receiverName, type, deviceStatusCountInt, "nicht geladen", "");
+      DeviceProperties prop = DeviceProperties(id, receiverName,
+          type.deviceClass, deviceStatusCountInt, "nicht geladen", "");
 
       devices.add(prop);
     } on Exception catch (_, e) {

@@ -40,8 +40,9 @@ class _SettingsPageClockConfigureState
           leading: const Icon(Icons.person)),
       SettingsTile(
           title: const Text("Gerätetyp"),
-          description: Text(widget._currentDevice.deviceType.toString()),
-          leading: widget._currentDevice.deviceType.icon)
+          description: Text(
+              widget._currentDevice.deviceClass.getDeviceType().toString()),
+          leading: widget._currentDevice.deviceClass.toIcon())
     ]);
   }
 

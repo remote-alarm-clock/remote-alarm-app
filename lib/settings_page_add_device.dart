@@ -54,7 +54,7 @@ class _SettingsPageAddDeviceState extends State<SettingsPageAddDevice> {
       SettingsTile deviceTile = SettingsTile(
         title: Text(device.id),
         description: Text("Besitzer: ${device.receiverName}"),
-        leading: device.deviceType.icon,
+        leading: device.deviceClass.toIcon(),
         onPressed: (context) {
           saveNewDevice(device, context);
         },

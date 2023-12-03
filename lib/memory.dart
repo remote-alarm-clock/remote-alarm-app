@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:remote_alarm/device_display_widgets/device_class.dart';
 import 'package:remote_alarm/main.dart';
 import 'package:remote_alarm/message_send_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,17 +23,12 @@ enum DeviceType {
 }
 
 // Cool type of extensions on values (instead of creating methods on the enum).
-extension DeviceTypeIcon on DeviceType {
-  /// Get Icon corresponding to the type of device.
-  Icon get icon {
+extension DeviceTypeClass on DeviceType {
+  DeviceClass get deviceClass {
     switch (this) {
-      case DeviceType.clock:
-        return const Icon(Icons.alarm);
-      case DeviceType.lack:
-        return const Icon(Icons.remove);
       case DeviceType.unknown:
       default:
-        return const Icon(Icons.question_mark);
+        return const NotImplementedDevice();
     }
   }
 }
@@ -40,7 +36,7 @@ extension DeviceTypeIcon on DeviceType {
 class DeviceProperties {
   String id;
   String receiverName;
-  DeviceType deviceType;
+  DeviceClass deviceClass;
   int lastClockStatusCount;
   String lastMessage;
   String lastTime;
@@ -50,14 +46,14 @@ class DeviceProperties {
     return other is DeviceProperties && other.id == id;
   }
 
-  DeviceProperties(this.id, this.receiverName, this.deviceType,
+  DeviceProperties(this.id, this.receiverName, this.deviceClass,
       this.lastClockStatusCount, this.lastMessage, this.lastTime);
 
   /// Create Tab widget from the properties of this device.
   Widget toTab() {
     return Tab(
       text: receiverName,
-      icon: deviceType.icon,
+      icon: deviceClass.toIcon(),
     );
   }
 
@@ -81,7 +77,8 @@ class DeviceProperties {
     await prefs.setString("${id}_receiver_name", receiverName);
 
     // Device Type
-    await prefs.setString("${id}_device_type", deviceType.toString());
+    await prefs.setString(
+        "${id}_device_type", deviceClass.getDeviceType().toString());
 
     // Status Count
     await prefs.setInt("${id}_last_clock_status_count", lastClockStatusCount);
@@ -188,7 +185,7 @@ class Memory {
           devs.add(DeviceProperties(
               deviceID,
               deviceReceiverName,
-              DeviceType.fromString(deviceType),
+              DeviceType.fromString(deviceType).deviceClass,
               deviceStatusCount,
               deviceMessage,
               deviceMessageTime));
