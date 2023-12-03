@@ -45,7 +45,6 @@ class _MessageSendViewState extends State<MessageSendView>
     with AutomaticKeepAliveClientMixin {
   final _formKey = GlobalKey<FormState>();
   final _messageDisplayKey = GlobalKey<_MessagePreViewState>();
-  final letterLimitForMessage = 126;
 
   @override
   bool get wantKeepAlive => true;
@@ -58,6 +57,29 @@ class _MessageSendViewState extends State<MessageSendView>
   /// Send a new message to firebase
   void _sendMessage() async {
     dbSendMessage(widget.device, messageToClock, useAlarm);
+  }
+
+  String? _validate(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Bitte gebe eine Nachricht ein!";
+    }
+    // Do programmer defined validation here.
+    List valid = widget.device.deviceClass.isMessageValid(value);
+    if (valid.isEmpty || valid[0] is! bool) {
+      print(
+          "The validator feature is not implmenented properly! Please refine the DeviceClass.isMessageValid(String) implementation of ${widget.device.deviceClass.toString()} to return a List with first element being a bool!");
+      return "Programmierfehler! Nachricht kann nicht validiert werden.";
+    }
+    if (!valid[0]) {
+      // Check if there is a custom error message. If so display it.
+      if (valid.length > 1 ||
+          valid[1] is String ||
+          (valid[1] as String).isNotEmpty) {
+        return valid[1] as String;
+      }
+      return "Nachricht ist ungültig!";
+    }
+    return null;
   }
 
   /*String _formatMessage(String messageToDisplay) {
@@ -112,15 +134,7 @@ class _MessageSendViewState extends State<MessageSendView>
                     print("Message to Clock is: '$value'");
                     messageToClock = value!;
                   },
-                  validator: (String? value) {
-                    if (value == null || value.isEmpty) {
-                      return "Bitte gebe eine Nachricht ein!";
-                    }
-                    if (value.length > letterLimitForMessage) {
-                      return "Nachricht max. $letterLimitForMessage Zeichen!";
-                    }
-                    return null;
-                  },
+                  validator: _validate,
                 ),
               ),
               CheckboxFormField(

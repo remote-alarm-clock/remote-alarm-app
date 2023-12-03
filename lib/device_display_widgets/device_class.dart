@@ -21,9 +21,24 @@ abstract class DeviceClass {
   /// [username] The users username. At this point, it will be non-empty.
   Widget toMessagePreview(
       BuildContext context, String messagePreviewed, String username);
+
+  /// Return What this devices Icon should be.
   Widget toIcon();
+
+  /// The cleartext name of this device. Can be localized, but should be String for now.
   String getDisplayName();
+
+  /// The devices enumeratable type.
   DeviceType getDeviceType();
+  @override
+  String toString() {
+    return getDeviceType().toString();
+  }
+
+  /// Return whether [message] is valid to be sent to this device.
+  /// First index is a bool indicating whether [message] is valid.
+  /// Second opional index is the error message to be displayed to a user.
+  List isMessageValid(String message);
 }
 
 class NotImplementedDevice implements DeviceClass {
@@ -57,11 +72,20 @@ class NotImplementedDevice implements DeviceClass {
   DeviceType getDeviceType() {
     return DeviceType.unknown;
   }
+
+  @override
+  List isMessageValid(String message) {
+    return [
+      message.length <= 100,
+      "Nachricht darf nicht länger als 100 Zeichen sein!"
+    ];
+  }
 }
 
 // icons.alarm and icons.remove for clock and lack
 
 /* 
+  final letterLimitForMessage = 126;
   final clockImage = 'assets/clockface_zoom.svg';
  double width =
         MediaQuery.of(context).size.width * 0.4; //40% of screen width
