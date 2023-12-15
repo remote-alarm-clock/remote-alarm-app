@@ -1,3 +1,5 @@
+import 'package:remote_alarm/device_display_widgets/device_class_lack.dart';
+
 import 'device_class.dart';
 import 'device_class_clock.dart';
 import 'device_class_unimplemented.dart';
@@ -27,6 +29,8 @@ extension DeviceTypeClass on DeviceType {
     switch (this) {
       case DeviceType.clock:
         return const ClockDevice();
+      case DeviceType.lack:
+        return const LackDevice();
       case DeviceType.unknown:
       default:
         return const NotImplementedDevice();
