@@ -101,11 +101,6 @@ Future<void> showNotification(String title, String content) async {
 
 /// Method where all initializations happen and all pre build checks are supposed to be done! (Like async DB checks and builders!)
 Future<void> initializeApp() async {
-  // Initialize everything
-  await Firebase.initializeApp(
-      name: "Remote Alarm App",
-      options: DefaultFirebaseOptions.currentPlatform);
-
   // Load memory here
   await Memory.instance.reload();
 
@@ -191,6 +186,7 @@ Future<void> main() async {
   ]);
 
   await initializeNotifications();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const App());
 
   // BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
